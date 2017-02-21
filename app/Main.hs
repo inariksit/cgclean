@@ -23,54 +23,104 @@ main = do
     _ -> usage
 
 usage :: IO ()
-usage = do putStr   "usage: stack exec cg-clean <file>.rlx " 
-           putStrLn " < all | compact-strings | find-repetition | sort-by-target >"
-           putStrLn "Output will be generated in <file>.compact.rlx, <file>.repetitive.txt, <file>.sorted.rlx"
+usage = 
+  do putStr "usage: stack exec cg-clean <file>.rlx " 
+     putStrLn " < all | compact-strings | find-repetition | sort-by-target >"
+     putStr "Output will be generated in <file>.compact.rlx, " 
+     putStrLn " <file>.repetitive.txt, <file>.sorted.txt"
     
+-------------------------------------------------------------------------------
+
 compact :: FilePath -> IO ()
 compact rlfile = do
+  putStrLn "Changing wordforms into case-insensitive regular expressions."
+  putStrLn "Then, remove redundant rules:"
+  putStrLn "e.g.  `REMOVE \"<x>\" if y'   and   `REMOVE \"<X>\" IF y'"
+  putStrLn "will be merged into one rule."
+  putStrLn ""
   compactGrammar <- printGrammar True `fmap` readFile rlfile
   let compactName = takeBaseName rlfile ++ ".compact.rlx"
   writeFile compactName compactGrammar
 
 repetitiveDefs :: FilePath -> IO ()
 repetitiveDefs rlfile = do
+  putStrLn "Finding repetitive set definitions"
+  putStrLn ""
   (defs,rules) <- parse False `fmap` readFile rlfile
 
-  -- Compacting a tagset of the form ("a" c) OR ("a" d) OR ("b" c) OR ("b" d),
-  -- into ("a" OR "b") + (c OR d).
-  let compactDefs = [ compactTagset def | (name,def) <- defs ]
-  let diffDefs = [ (nm,odef,comp) 
-                    | ((nm,odef),comp) <- zip defs compactDefs
-                    , odef /= comp ]
-
-  
-  -- Tagsets with some repetition, but not entirely like the previous:
-  let repDefs = [ (,) (nm,def) [ (rd,occs)
-                    | (rd,occs) <- findRepetition def 
-                    , occs > 2 ]
-                  | (nm,def) <- defs ]
-  --TODO: take the tagsets that have >2 occurrences (groupBy or something)
-  --and do compactTagset to them.
-  -- Then show the new tagset like "this is how you could split <xyz>; 
-  -- these <åäö> are still different"
+  let repDefs = [ (def, groupRepetitiveTagset def)
+                   | (name,def) <- defs
+                    , not $ null (groupRepetitiveTagset def) ]
 
   let repFileName = takeBaseName rlfile ++ ".repetitive.txt"
-  writeFile repFileName (concatMap showCompDef diffDefs)
-  appendFile repFileName (concatMap showRepDef repDefs)
+
+  writeFile repFileName (concatMap showRepDef repDefs)
 
  where
   showCompDef (nm,def,c) = "\nOriginal definition:\n"
                            ++ (nm ++ " = " ++ showInline def)
                            ++ "\nCompact tagsets:\n"
                            ++ (nm ++ " = " ++ showInline c) ++ "\n"
-  showRepDef (_,[])   = []
-  showRepDef ((nm,def),occs) = "\nOriginal definition:\n"
-                             ++ (nm ++ " = " ++ showInline def)
-                             ++ "\nRepetitive elements:\n"
-                             ++ (unwords $ map (\(x,y) -> (show x ++ ": " ++ show y)) occs)
-                             ++ "\n"
-                          
--- | This should use the SAT-based methods eventually, as soon as I get it work properly for Basque.
+  showRepDef (def,cdef) = "\nOriginal tagset:"
+                       ++ "\n----------------\n"
+                       ++ (show def ++ " = " ++ showInline def)
+                       ++ "\n\nSome possibilities for regrouping:"
+                       ++ "\n----------------------------------\n"
+                       ++ unlines (breakInSets def `fmap` cdef)
+                       ++ "\n=====================================\n"
+
+-- | Given the original tagset and the compacted version, print it nicely
+breakInSets :: TagSet -> TagSet -> String
+breakInSets odef (Cart l@(Set _ lexs) m@(Set _ mors)) 
+    | length (getOrList lexs) == 1 
+         = unlines [ "LIST " ++ morSetName ++ " = " ++ showInline m ++ " ;"
+                   , "SET " ++ show odef ++ " = " ++ showInline l ++ " + " ++ morSetName ++ " ;"]
+    | length (getOrList mors) == 1
+        = unlines [ "LIST " ++ lexSetName ++ " = " ++ showInline l ++ " ;"
+                  , "SET " ++ show odef ++ " = " ++ lexSetName ++ " + " ++ showInline m ++ " ;"]
+
+    | otherwise 
+        = unlines [ "LIST " ++ lexSetName ++ " = " ++ showInline l ++ " ;"
+                  , "LIST " ++ morSetName ++ " = " ++ showInline m ++ " ;"
+                  , "SET " ++ show odef ++ " = " ++ lexSetName ++ " + " ++ morSetName ++ " ;"]
+ where
+  lexSetName = show odef ++ "_LEX"
+  morSetName = show odef ++ "_MORPH"
+
+breakInSets _ x = show x
+
+-------------------------------------------------------------------------------
+
+
+-- | This should use the SAT-based methods eventually, 
+-- as soon as I get it to work properly for Basque.
 sortByTarget :: FilePath -> IO ()
-sortByTarget rules = putStrLn "sortByTarget: not implemented yet"
+sortByTarget rlfile = do
+  putStrLn "Grouping rules by targets"
+  putStrLn ""
+  let compact = True
+  (defs,rules) <- parse compact `fmap` readFile rlfile
+
+  let groupedRls = groupRules (concat rules) :: [[Rule]]
+  let groupedSortedRls = map sortByContext groupedRls
+  
+  let sortedFile = takeBaseName rlfile ++ ".sorted.txt"
+
+  --writeFile sortedFile (printDefs compact rlfile)
+ 
+  writeFile sortedFile (unlines $ map showGroup groupedSortedRls)
+
+ where
+  showGroup :: [Rule] -> String
+  showGroup rules = 
+    let trg = show $ target (head rules)
+     in unlines $ ("\n# Rules that target " ++ trg ++ "\n"):
+                   map show rules
+
+-- Maybe add a proper printDefs function in CGHS.Parse
+printDefs :: Bool -> String -> String
+printDefs b = unlines . filter isSet . lines . printGrammar b
+ where 
+  isSet ('S':'E':'T':_)     = True
+  isSet ('L':'I':'S':'T':_) = True
+  isSet _ = False 

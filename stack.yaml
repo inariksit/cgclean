@@ -39,7 +39,7 @@ packages:
 - '.'
 - location:
    git: https://github.com/inariksit/cghs.git
-   commit: dcc9e928cf6acb325d84048e4712cf0890672f35
+   commit: d2e0f93992053d06b4938712572b9536ddf9fb79
 - location:
    git: https://github.com/inariksit/cgsat.git
    commit: 2a47919e177a376265daf791eef626aa9a2a8599
