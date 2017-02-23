@@ -5,7 +5,7 @@
 
 The Basque CG was originally written in 19XX, using the CG-1
 formalism. Since then, it has undergone many changes, by many
-grammarians. The file consists of XX lines, out of which YY are
+grammarians. The file consists of 8600 lines, out of which 2600 are
 rules or tagsets--rest are comments and commented out rules or sets.
 During the two decades of development, the Basque morphological
 analyser has also been updated several times, and not always
@@ -90,11 +90,11 @@ texts. For instance, the following 5 rules that target ADOIN will be
 in the following order:
 
 ```
-SELECT ADOIN IF (1 ARAZI) ;                           # line 
-REMOVE ADOIN IF (0 IZE) (1C ADJ) ;                    # line
-REMOVE ADOIN IF (0 IZE) (1 DET | ADJ | IZE) ;         # line
-REMOVE ADOIN IF (0 EZEZAG + ADJ + GEN) (-2C IZE) ;    # line
-REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;          # line
+SELECT ADOIN IF (1 ARAZI) ;                           # line 7412
+REMOVE ADOIN IF (0 IZE) (1C ADJ) ;                    # line 6423
+REMOVE ADOIN IF (0 IZE) (1 DET | ADJ | IZE) ;         # line 6433
+REMOVE ADOIN IF (0 EZEZAG + ADJ + GEN) (-2C IZE) ;    # line 6319
+REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;          # line 6422
 ```
 
 When the rules are in this order, we run the SAT-based symbolic
