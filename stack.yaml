@@ -39,18 +39,25 @@ packages:
 - '.'
 - location:
    git: https://github.com/inariksit/cghs.git
-   commit: d2e0f93992053d06b4938712572b9536ddf9fb79
+   commit: 2983ca5b83429cf005c13310a96956d245fcc283
+# If you want to support line numbers in CG rules,
+# use this commit: 44f61a4679d4e99556954110ba519e65d337c44e
+# OBS. it requires every rule to have a name (ugly hack!)
+
 - location:
    git: https://github.com/inariksit/cgsat.git
-   commit: 2a47919e177a376265daf791eef626aa9a2a8599
+   commit: beca433af266d7736bcfd4813a3f7b7bd531e5bf
 - location:
    git: https://github.com/inariksit/satplus.git
    commit: 218b1824ae4a42b7e67ad3bf3f7b390c7ee122fd
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - minisat-0.1.2 
 - BNFC-2.8.1
+- mtl-2.2.1
+
 
 # Override default flag values for local packages and extra-deps
 flags: {}
