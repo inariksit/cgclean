@@ -1,0 +1,75 @@
+%
+% File nodalida2017.tex
+%
+% Contact beata.megyesi@lingfil.uu.se
+%
+% Based on the instruction file for Nodalida 2015 and EACL 2014
+% which in turn was based on the instruction files for previous 
+% ACL and EACL conferences.
+
+\documentclass[11pt]{article}
+\usepackage{nodalida2017}
+%\usepackage{times}
+\usepackage{mathptmx}
+%\usepackage{txfonts}
+\usepackage{url}
+\usepackage{latexsym}
+\special{papersize=210mm,297mm} % to avoid having to use "-t a4" with dvips 
+%\setlength\titlebox{6.5cm}  % You can expand the title box if you really have to
+
+\title{Cleaning up the Basque grammar: a work in progress}
+
+% \author{First Author \\
+%   Affiliation / Address line 1 \\
+%   Affiliation / Address line 2 \\
+%   Affiliation / Address line 3 \\
+%   {\tt email@domain} \\\And
+%   Second Author \\
+%   Affiliation / Address line 1 \\
+%   Affiliation / Address line 2 \\
+%   Affiliation / Address line 3 \\
+%   {\tt email@domain} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+% \begin{abstract}
+%   This document contains the instructions for preparing a camera-ready
+%   manuscript for the proceedings of Nodalida-2017. The document itself
+%   conforms to its own specifications, and is therefore an example of
+%   what your manuscript should look like. These instructions should be
+%   used for both papers submitted for review and for final versions of
+%   accepted papers.  Authors are asked to conform to all the directions
+%   reported in this document.
+% \end{abstract}
+
+
+\section{Introduction}
+
+The Basque CG was originally written in 19XX, using the CG-1 formalism. Since then, it has undergone many changes, by many grammarians. The file consists of 8600 lines, out of which 2600 are rules or tagsets--rest are comments and commented out rules or sets. During the two decades of development, the Basque morphological analyser has also been updated several times, and not always synchronised with the CG. As a result, the Basque grammar needs serious attention.
+
+In the present paper, we describe the ongoing process of cleaning up the Basque grammar. We use a variety of tools and methods, ranging from simple string replacements to SAT-based symbolic evaluation, introduced in \cite{listenmaa_claessen2016}, and grammar tuning by \cite{bick2013tuning}. We present our experiences in combining all these tools, along with a few modest additions to the simpler end of the scale.
+\section{Background and previous work}
+
+
+\section{Previous work}
+We use the tools presented by \cite{bick2013tuning} and \cite{listenmaa_claessen2016}.
+Bick \cite{bick2013tuning} presents a method for tuning a grammar, based on machine learning. Bick reports an improvement of ... when tested on ... grammar.
+
+Listenmaa and Claessen \cite{listenmaa_claessen2016} present a method for detecting contradictions in a grammar, using SAT-based symbolic evaluation. They report that the tool detects rule conflicts in a few small grammars, but no further evaluation on the effects of the accuracy of the grammar.
+We see both tools complementing each other.
+
+
+% \section*{Acknowledgments}
+
+% Do not number the acknowledgment section. Do not include this section
+% when submitting your paper for review.
+
+
+\bibliographystyle{acl}
+\bibliography{cg}
+
+
+\end{document}
