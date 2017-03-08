@@ -51,16 +51,94 @@
 The Basque CG was originally written in 19XX, using the CG-1 formalism. Since then, it has undergone many changes, by many grammarians. The file consists of 8600 lines, out of which 2600 are rules or tagsets--rest are comments and commented out rules or sets. During the two decades of development, the Basque morphological analyser has also been updated several times, and not always synchronised with the CG. As a result, the Basque grammar needs serious attention.
 
 In the present paper, we describe the ongoing process of cleaning up the Basque grammar. We use a variety of tools and methods, ranging from simple string replacements to SAT-based symbolic evaluation, introduced in \cite{listenmaa_claessen2016}, and grammar tuning by \cite{bick2013tuning}. We present our experiences in combining all these tools, along with a few modest additions to the simpler end of the scale.
-\section{Background and previous work}
 
 
 \section{Previous work}
 We use the tools presented by \cite{bick2013tuning} and \cite{listenmaa_claessen2016}.
-Bick \cite{bick2013tuning} presents a method for tuning a grammar, based on machine learning. Bick reports an improvement of ... when tested on ... grammar.
+Bick \cite{bick2013tuning} presents a method for tuning a grammar, based on machine learning. Bick reports an error reduction between 7--15 \% when tested on the Danish tagging grammar.
+Listenmaa and Claessen \cite{listenmaa_claessen2016} present a method for detecting contradictions in a grammar, using SAT-based symbolic evaluation.  They report detecting rule conflicts in a few small grammars, but provide no further evaluation on the grammars after fixing the rule conflicts. 
+In our experiments, we use both of these tools for different purposes, complementing each other.
 
-Listenmaa and Claessen \cite{listenmaa_claessen2016} present a method for detecting contradictions in a grammar, using SAT-based symbolic evaluation. They report that the tool detects rule conflicts in a few small grammars, but no further evaluation on the effects of the accuracy of the grammar.
-We see both tools complementing each other.
+\section{Pipeline}
 
+As a first step, we run a series of simple, mostly off-the-shelf tools. 
+The next step is to group the rules and order them by their contextual tests.
+These sets are checked both by the SAT-based tool, and grammarians. After these
+steps, we give the grammar as an input for ML-tuning.
+
+
+\subsection{Simple tools}
+
+\paragraph{String operations}
+Fix typos: O for 0, and various mismatched \texttt{"<>"} in word forms: e.g. \texttt{"<zuen">}, \texttt{<argi>"}.
+Transform word forms into case-insensitive, remove duplicates. 
+There were many occurrences of identical rules, of the form \texttt{REMOVE ("<x>")} and \texttt{REMOVE ("<X>")}. We changed those rules into the form \texttt{REMOVE ("<x>"i)}, and removed duplicate rules after that.
+
+\paragraph{Tagset operations}
+The VISL CG-3 compiler offers useful features, such as \texttt{--show-unused-sets} and \texttt{--show-tags}. With the former, we could eliminate 255 unused tagsets, and with the latter, we detected 15 obsolete or misspelled tags in the remaining used tagsets, by comparing against an up-to-date morphological lexicon.
+
+% A special case, which occurred 4 of the 15 times, was to use a set in place of a tag name, such as in Figure~\ref{fig:tagnames}.
+
+% \begin{figure}
+% \caption{Tagsets used as tag names}
+% \label{fig:tagnames}
+% \begin{verbatim}
+% LIST ADI/ADT = ADI ADT ;
+% LIST ADIZEHAR = ("jakin" ADI/ADT) ;
+
+% LIST MOD/DENB = MOD DENB ;
+% REMOVE (BALD ERL MOD/DENB) ;
+% \end{verbatim}
+% \end{figure}
+
+% Both of the lists, ADIZEHAR and the inline target in the remove rule, are using a previously defined list in a position where there should be a tag name instead. As a result, ADI/ADT and MOD/DENB are interpreted as tag names---such tag names don't exist, and hence these rules can never apply.
+
+\paragraph{Human readability}
+For improving the readability of the grammar, we wrote a tool that finds repetitive set definitions, and suggests ways to compact them. An example is shown below:
+
+Original definition: \\
+\texttt{("ageri" ADJ ABS MG) ("bizi" ADJ ABS MG) ... ("haizu" ADJ ABS MG) ;}
+
+Compact version: \\
+\texttt{("ageri"|"bizi"|"haizu") + (ADJ ABS MG) ;}
+
+
+In addition, the grammar contains many rules that specify an inline set, when there is already the same or a very similar set definition. For instance, the rule \texttt{REMOVE (ADL) IF (0 ADT) (1 ("<.>") OR ("<;>") OR ("<,>") OR ("<:>") OR ("<?>") OR ("<!>"))} lists different punctuation marks as word forms, instead of using the list PUNTUAZIOA, which contains all these tokens.
+
+The standard tools did not provide this type of suggestions, so we wrote these tools ourselves. Neither of these transformations is applied automatically, they are just suggestions for the grammar writers.
+
+
+
+\subsection{Group by target, sort by conditions}
+After the simple checks and transformations, we group the rules by their targets, and sort them by the complexity of their contextual texts. For instance, the 5 rules that target ADOIN will be in the order shown in Figure~\ref{fig:sorted}: from fewest to most contextual tests, and in the case of same number of tests, preferring those with fewer tagsets.
+
+\begin{figure*}[t]
+\label{fig:sorted}
+\begin{verbatim}
+SELECT ADOIN IF (1 ARAZI) ;                           # line 7412
+REMOVE ADOIN IF (0 IZE) (1C ADJ) ;                    # line 6423
+REMOVE ADOIN IF (0 IZE) (1 DET | ADJ | IZE) ;         # line 6433
+REMOVE ADOIN IF (0 EZEZAG + ADJ + GEN) (-2C IZE) ;    # line 6319
+REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;          # line 6422
+\end{verbatim}
+\caption{Rules grouped by target, and ordered by their contextual tests.}
+\end{figure*}
+
+\subsection{Check for conflicts and redundancies}
+
+When the rules are in this order, we run the SAT-based symbolic evaluation on them. If it says that some rule with a more complex condition is superfluous because of another rule earlier in the list, then that is a hint for the grammar writer: why are these two rules in the grammar, if the simpler would do?
+
+Even if the SAT-method wouldn't find a conflict, we give the rules to a grammarian in any case. The grammarian works with this list, having the original grammar on the side to see the comments, or other original context of any given rule. Seeing all the rules grouped helps with the situation where different grammarians have written rules independent of each other. The grammarian can do their manual modifications either on the original grammar, or to this grouped version.
+
+This sorting and grouping is not meant to be the final order, it is only to help a human grammarian to make decisions regarding all the rules that target the same tagsets.
+
+\subsection{Ordering: ML-tuning}
+Once the grammar is cleaned up a bit, we give it to the ML-tuning tool by Bick \cite{bick2013tuning}, with the purpose of finding an optimal order.
+\textbf{(TODO: run these experiments!)}
+After this order, we can run the SAT-based tool again, and notice if the ML-tuning has introduced new conflicts or superfluous rules.
+
+We compare the performance of the grammar in its original state, and the cleaned up version. 
+%Our initial hypothesis is that the cleaned up version will benefit more from the tuning than the original grammar.
 
 % \section*{Acknowledgments}
 
