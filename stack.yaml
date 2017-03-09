@@ -39,14 +39,14 @@ packages:
 - '.'
 - location:
    git: https://github.com/inariksit/cghs.git
-   commit: 2983ca5b83429cf005c13310a96956d245fcc283
+   commit: b25335d76a0db5effed1f2d1b0c1a44b5d1537ff
 # If you want to support line numbers in CG rules,
 # use this commit: 44f61a4679d4e99556954110ba519e65d337c44e
 # OBS. it requires every rule to have a name (ugly hack!)
 
 - location:
    git: https://github.com/inariksit/cgsat.git
-   commit: beca433af266d7736bcfd4813a3f7b7bd531e5bf
+   commit: 05e00396423d4ecec8033b31c9da4674a389762d
 - location:
    git: https://github.com/inariksit/satplus.git
    commit: 218b1824ae4a42b7e67ad3bf3f7b390c7ee122fd
