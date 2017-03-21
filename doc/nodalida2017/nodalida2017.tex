@@ -96,11 +96,12 @@ The VISL CG-3 compiler offers useful features, such as \texttt{--show-unused-set
 \paragraph{Human readability}
 For improving the readability of the grammar, we wrote a tool that finds repetitive set definitions, and suggests ways to compact them. An example is shown below:
 
-Original definition: \\
-\texttt{("ageri" ADJ ABS MG) ("bizi" ADJ ABS MG) ... ("haizu" ADJ ABS MG) ;}
+\begin{itemize}
+\item [Original definition:] \texttt{("ageri" ADJ ABS MG) ("bizi" ADJ ABS MG) ... ("haizu" ADJ ABS MG) ;}
+\item [Compact version:] \texttt{("ageri"|"bizi"|"haizu") + (ADJ ABS MG) ;}
 
-Compact version: \\
-\texttt{("ageri"|"bizi"|"haizu") + (ADJ ABS MG) ;}
+\end{itemize}
+
 
 
 In addition, the grammar contains many rules that specify an inline set, when there is already the same or a very similar set definition. For instance, the rule \texttt{REMOVE (ADL) IF (0 ADT) (1 ("<.>") OR ("<;>") OR ("<,>") OR ("<:>") OR ("<?>") OR ("<!>"))} lists different punctuation marks as word forms, instead of using the list PUNTUAZIOA, which contains all these tokens.
@@ -112,7 +113,8 @@ The standard tools did not provide this type of suggestions, so we wrote these t
 \subsection{Group by target, sort by conditions}
 After the simple checks and transformations, we group the rules by their targets, and sort them by the complexity of their contextual texts. For instance, the 5 rules that target ADOIN will be in the order shown in Figure~\ref{fig:sorted}: from fewest to most contextual tests, and in the case of same number of tests, preferring those with fewer tagsets.
 
-\begin{figure*}[t]
+\begin{figure*}[ht]
+\begin{minipage}{\textwidth}
 \label{fig:sorted}
 \begin{verbatim}
 SELECT ADOIN IF (1 ARAZI) ;                           # line 7412
@@ -122,23 +124,57 @@ REMOVE ADOIN IF (0 EZEZAG + ADJ + GEN) (-2C IZE) ;    # line 6319
 REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;          # line 6422
 \end{verbatim}
 \caption{Rules grouped by target, and ordered by their contextual tests.}
+\end{minipage}
 \end{figure*}
+\enlargethispage{-4\baselineskip}
 
 \subsection{Check for conflicts and redundancies}
 
-When the rules are in this order, we run the SAT-based symbolic evaluation on them. If it says that some rule with a more complex condition is superfluous because of another rule earlier in the list, then that is a hint for the grammar writer: why are these two rules in the grammar, if the simpler would do?
+When the rules are grouped and sorted as described, we run SAT-based 
+symbolic evaluation \cite{listenmaa_claessen2016} on each group. 
+If it says that some rule with a more complex condition is superfluous 
+because of another rule earlier in the list\footnote{For example, the latter rule of the following is superfluous: \texttt{REMOVE Verb IF (-1 Det)} and \texttt{REMOVE Verb IF (-1 Det) (1 Verb)}}, 
+then that is a hint for the grammar writer: why are there two similar 
+rules in the grammar, if the simpler one would do?
+At the moment of writing this abstract, we are still working on adding
+the SAT-method to the pipeline, and have no concrete results to report.
 
-Even if the SAT-method wouldn't find a conflict, we give the rules to a grammarian in any case. The grammarian works with this list, having the original grammar on the side to see the comments, or other original context of any given rule. Seeing all the rules grouped helps with the situation where different grammarians have written rules independent of each other. The grammarian can do their manual modifications either on the original grammar, or to this grouped version.
+Even if the SAT-method wouldn't find a conflict, we give the rules to 
+a grammarian in any case. The grammarian works with this list, having 
+the original grammar on the side to see the comments, or other original 
+context of any given rule. Seeing all the rules grouped helps with the 
+situation where different grammarians have written rules independent of 
+each other. The grammarian can do their manual modifications either on 
+the original grammar, or to this grouped version.
 
-This sorting and grouping is not meant to be the final order, it is only to help a human grammarian to make decisions regarding all the rules that target the same tagsets.
+This sorting and grouping is not meant to be the final order, it is only 
+to help a human grammarian to make decisions regarding all the rules that 
+target the same tagsets.
 
 \subsection{Ordering: ML-tuning}
-Once the grammar is cleaned up a bit, we give it to the ML-tuning tool by Bick \cite{bick2013tuning}, with the purpose of finding an optimal order.
-\textbf{(TODO: run these experiments!)}
-After this order, we can run the SAT-based tool again, and notice if the ML-tuning has introduced new conflicts or superfluous rules.
+Once the grammar has gone through the previous steps, we give it to the 
+ML-tuning tool \cite{bick2013tuning}, with the purpose of finding an 
+optimal order. Then we can run the newly ordered grammar through SAT-evaluation,
+to detect if the ML-tuning has introduced new conflicts or superfluous rules.
 
-We compare the performance of the grammar in its original state, and the cleaned up version. 
-%Our initial hypothesis is that the cleaned up version will benefit more from the tuning than the original grammar.
+Our initial hypothesis is that the human-cleaned version will benefit more 
+from tuning than the original grammar. Some bad rules may have only a minor 
+problem, such as a single tag name having changed meaning, and they would be 
+better fixed by updating the obsolete tag, instead of the whole rule being 
+demoted or killed. 
+To test our assumptions, we run ML-tuning for both the original grammar and 
+the human-cleaned version: it is also possible that this error type is not very 
+common, and the majority of the bad rules were bad already when they were born.
+
+% We are also interested to find out whether there are some rules or rule types 
+% that are consistently missed by one of the tuning methods. 
+
+%We compare the performance of the grammar in its original state, and the cleaned up version. 
+
+\section{Evaluation}
+
+
+
 
 % \section*{Acknowledgments}
 
