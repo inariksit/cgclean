@@ -173,7 +173,18 @@ common, and the majority of the bad rules were bad already when they were born.
 
 \section{Evaluation}
 
-
+\begin{table*}[]
+\centering
+\caption{My caption}
+\label{my-label}
+\begin{tabular}{l|l|l|l|l|l|l|}
+\cline{2-7}
+                                                 & \multicolumn{3}{l|}{\textbf{Standard}}            & \multicolumn{3}{l|}{\textbf{Tolerant}}            \\ \cline{2-7} 
+                                                 & \textit{Rec.} & \textit{Prec.} & \textit{F-score} & \textit{Rec.} & \textit{Prec.} & \textit{F-score} \\ \hline
+\multicolumn{1}{|l|}{\textbf{Original grammar}}  & 92.3          & 68.4           & 78.6             &               &                &                  \\ \hline
+\multicolumn{1}{|l|}{\textbf{ML-tuned original}} &               &                &                  &               &                &                  \\ \hline
+\end{tabular}
+\end{table*}
 
 
 % \section*{Acknowledgments}
