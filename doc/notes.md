@@ -1,12 +1,12 @@
 All numbers are using gold standard where punctuation is marked <Correct!>
 
-Original grammar, with Inari's typofixes:
+Original grammar, with Inari's typofixes:  
  iteration 0, R=92.305, P=68.449, F=78.606  
  iteration 1, R=94.036, P=69.754, F=80.095  
  iteration 4, R=93.731, P=72.698, F=81.885  
 
-Original-with-typofixes grammar sorted (shorter contexts first):
-* All in one section
+Original-with-typofixes grammar sorted (shorter contexts first):  
+* All in one section  
 iteration 0, R=89.057, P=65.073, F=75.198  
 iteration 1, R=94.162, P=69.724, F=80.12  
 iteration 2, R=93.355, P=73.04,  F=81.957  
@@ -14,7 +14,7 @@ iteration 3, R=93.999, P=72.485, F=81.851
 iteration 4, R=94.065, P=72.367, F=81.801  
 iteration 5, R=94.133, P=72.271, F=81.765  
 
-* Different sections for different targets
+* Different sections for different targets  
  iteration 0, R=89.008, P=65.114, F=75.208  
  iteration 1, R=94.162, P=69.724, F=80.12  
  iteration 2, R=93.48,  P=73.036, F=82.002  
@@ -37,7 +37,7 @@ Original grammar sorted (longer contexts first):
 
 ***
 
-Initial cleanup by JM & Itziar:
+Initial cleanup by JM & Itziar:  
  iteration 0, R=92.707, P=64.017, F=75.735  
  iteration 1, R=94.406, P=64.221, F=76.441  
  iteration 2, R=93.538, P=66.966, F=78.052  
