@@ -30,6 +30,8 @@
 %   Affiliation / Address line 3 \\
 %   {\tt email@domain} \\}
 
+\def\t#1{\texttt{#1}}
+
 \date{}
 
 \begin{document}
@@ -48,14 +50,17 @@
 
 \section{Introduction}
 
-The Basque CG was originally written in 19XX, using the CG-1 formalism. Since then, it has undergone many changes, by many grammarians. The file consists of 8600 lines, out of which 2600 are rules or tagsets--rest are comments and commented out rules or sets. During the two decades of development, the Basque morphological analyser has also been updated several times, and not always synchronised with the CG. As a result, the Basque grammar needs serious attention.
+The first version of the Basque Constraint Grammar (BCG) was developed in 1995--1997 by two linguists \cite{aduriz1997euscg} based on the Constraint Grammar theory of \newcite{karlsson1990cgp,karlsson1995constraint}.
+Since then, it has undergone many changes, by many grammarians.
+% The file consists of 8600 lines, out of which 2600 are rules or tagsets--rest are comments and commented out rules or sets. 
+During the two decades of development, the Basque morphological analyser has also been updated several times, and not always synchronised with the CG. As a result, the Basque grammar needs serious attention.
 
 In the present paper, we describe the ongoing process of cleaning up the Basque grammar. We use a variety of tools and methods, ranging from simple string replacements to SAT-based symbolic evaluation, introduced in \newcite{listenmaa_claessen2016}, and grammar tuning by \newcite{bick2013tuning}. We present our experiences in combining all these tools, along with a few modest additions to the simpler end of the scale.
 
 
 \section{Previous work}
 
-\newcite{bick2013tuning} presents a method for tuning a grammar, based on machine learning. Bick reports an error reduction between 7--15 \% when tested on the Danish tagging grammar.
+\newcite{bick2013tuning} presents a method for automatically tuning a grammar, and reports an error reduction between 7--15 \% when tested on the Danish tagging grammar.
 \newcite{listenmaa_claessen2016} present a method for detecting contradictions in a grammar, using SAT-based symbolic evaluation.  They report detecting rule conflicts in a few small grammars, but provide no further evaluation on the grammars after fixing the rule conflicts. 
 In our experiments, we use both of these tools for different purposes, complementing each other.
 
@@ -65,6 +70,22 @@ As a first step, we run a series of simple, mostly off-the-shelf tools.
 The next step is to group the rules and order them by their contextual tests.
 These sets are checked both by the SAT-based tool, and grammarians. After these
 steps, we give the grammar as an input for ML-tuning.
+
+
+\begin{figure*}[t]
+\centering
+\label{fig:sorted}
+\begin{tabular}{lr}
+\t{SELECT ADOIN IF (1 ARAZI) ;}                         & \t{\# line 7412} \\
+\t{REMOVE ADOIN IF (0 IZE) (1C ADJ) ;}                  & \t{\# line 6423} \\
+\t{REMOVE ADOIN IF (0 IZE) (1 DET | ADJ | IZE) ;}       & \t{\# line 6433} \\
+\t{REMOVE ADOIN IF (0 EZEZAG + ADJ + GEN) (-2C IZE) ;}  & \t{\# line 6319} \\
+\t{REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;}        & \t{\# line 6422} \\
+\end{tabular}
+\caption{Rules grouped by target, and ordered by their contextual tests.}
+
+\end{figure*}
+
 
 
 \subsection{Simple tools}
@@ -96,12 +117,18 @@ The VISL CG-3 compiler offers useful features, such as \texttt{--show-unused-set
 \paragraph{Human readability}
 For improving the readability of the grammar, we wrote a tool that finds repetitive set definitions, and suggests ways to compact them. An example is shown below:
 
-\begin{itemize}
-\item [Original definition:] \texttt{("ageri" ADJ ABS MG) ("bizi" ADJ ABS MG) ... ("haizu" ADJ ABS MG) ;}
-\item [Compact version:] \texttt{("ageri"|"bizi"|"haizu") + (ADJ ABS MG) ;}
+\begin{table}[h]
+\begin{tabular}{l}
+Original  \\
+ ~~~~~~~~\texttt{("ageri" ADJ ABS MG)} \\
+ ~~~~~~~~\texttt{("bizi" ADJ ABS MG) ...} \\
+ ~~~~~~~~\texttt{("haizu" ADJ ABS MG) ;} \\
+Compact \\
+ ~~~~~~~~\texttt{("ageri"|"bizi"|"haizu") +} \\
+ ~~~~~~~~\texttt{(ADJ ABS MG) ;}
 
-\end{itemize}
-
+\end{tabular}
+\end{table}
 
 
 In addition, the grammar contains many rules that specify an inline set, when there is already the same or a very similar set definition. For instance, the rule \texttt{REMOVE (ADL) IF (0 ADT) (1 ("<.>") OR ("<;>") OR ("<,>") OR ("<:>") OR ("<?>") OR ("<!>"))} lists different punctuation marks as word forms, instead of using the list PUNTUAZIOA, which contains all these tokens.
@@ -113,20 +140,6 @@ The standard tools did not provide this type of suggestions, so we wrote these t
 \subsection{Group by target, sort by conditions}
 After the simple checks and transformations, we group the rules by their targets, and sort them by the complexity of their contextual texts. For instance, the 5 rules that target ADOIN will be in the order shown in Figure~\ref{fig:sorted}: from fewest to most contextual tests, and in the case of same number of tests, preferring those with fewer tagsets.
 
-\begin{figure*}[ht]
-\begin{minipage}{\textwidth}
-\label{fig:sorted}
-\begin{verbatim}
-SELECT ADOIN IF (1 ARAZI) ;                           # line 7412
-REMOVE ADOIN IF (0 IZE) (1C ADJ) ;                    # line 6423
-REMOVE ADOIN IF (0 IZE) (1 DET | ADJ | IZE) ;         # line 6433
-REMOVE ADOIN IF (0 EZEZAG + ADJ + GEN) (-2C IZE) ;    # line 6319
-REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;          # line 6422
-\end{verbatim}
-\caption{Rules grouped by target, and ordered by their contextual tests.}
-\end{minipage}
-\end{figure*}
-\enlargethispage{-4\baselineskip}
 
 \subsection{Check for conflicts and redundancies}
 
