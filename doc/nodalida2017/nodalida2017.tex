@@ -184,6 +184,62 @@ common, and the majority of the bad rules were bad already when they were born.
 
 %We compare the performance of the grammar in its original state, and the cleaned up version. 
 
+\section{Experimental features}
+
+The following techniques are for now just speculation.
+
+They can work either with a corpus, or a good description of possible ambiguity classes in the language.
+
+\subsection{Minimisation of tags}
+
+
+Take a test corpus/ambiguity classes, look at the readings, 
+group tags by those that discriminate between correct and incorrect readings.
+Example:
+
+\begin{verbatim}
+"<lurtarraren>"
+        "lurtar" ADJ ARR IZAUR+ GEN NUMS MUGM ZERO <Correct!>
+        "lurtar" IZE ARR GEN NUMS MUGM ZERO 
+        "lurtar" ADJ ARR IZAUR+ ABS MG
+\end{verbatim}
+
+For the given cohort, tags that are only in the correct are \t{GEN} and only in incorrect are \t{IZE, ABS, MG}.
+In other words, we learn that a rule that would target e.g. \t{ZERO} or \t{IZAUR+} would not remove all ambiguity.
+We can compute these tags for all cohorts/ambiguity classes, and see if some rules in the grammar could be simplified.
+
+
+\subsection{Views on grammar}
+
+There are many ways to order the rules in a grammar. For better maintainability, 
+it makes sense to place all rules that target certain phenomena together.
+On the other hand, some rules may be very heuristic, and don't make sense to be in the same section.
+
+We propose a solution of different \emph{views} on the grammar.
+\begin{itemize}
+\item Running order: can be optimised with ML-tuning, no need to be human-readable
+\item Sorted by feature: for the ease of the grammarian to find all rules that target the same phenomena.
+For example, ``all rules that target nouns'', ``all rules that mention postpositions in their contextual tests''.
+\item Tree view of rule dependencies. See next section about that.
+\end{itemize}
+
+
+
+\subsubsection{Tree view of rule dependencies}
+
+Two rules may be connected in several ways:
+
+\begin{itemize}
+\item Contradiction: Rules X and Y, in any order, give explicitly different instructions. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Noun}.
+\item ``Feeding order'': Rule X earlier in the sequence enables a later rule Y. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 NOT Noun)}
+\item ``Bleeding order'': Rule X earlier in the sequence blocks a later rule Y. Example:  X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 Noun)}.
+\item Counter(f|bl)eeding order: rules X and Y are reversed. Counterbleeding order is optimal, given that both rules are good: only in this order, both Y and X have a chance to apply. Counterfeeding is suboptimal but tolerable: X will act on the first iteration, and Y only on the second iteration, unless there is another rule that would block Y before.
+\item Rule X removes both correct and incorrect readings. Rule Y, if placed before X, renders X unable to act in some cases. Ideally, in the incorrect cases!
+\end{itemize}
+
+The rules could be arranged in the form of a tree, based on how they affect and are affected by other rules. Combined with the feature view, a grammarian could have a look at all rules that target nouns and their dependencies.
+
+
 \section{Evaluation}
 
 We evaluate the grammars with a manually disambiguated corpus of 65,153 tokens/53,429 words,
