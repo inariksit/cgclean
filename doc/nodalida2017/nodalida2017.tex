@@ -184,6 +184,57 @@ common, and the majority of the bad rules were bad already when they were born.
 
 %We compare the performance of the grammar in its original state, and the cleaned up version. 
 
+\section{Evaluation}
+
+We evaluate the grammars with a manually disambiguated corpus of 65,153 tokens/53,429 words,
+compiled from different sources \cite{aduriz2006epec}.
+So far we only report the original score, and the result from ML-tuning the original grammar.
+Later, we will include also the version cleaned by SAT and human attention, as well as
+the result of ML-tuning that.
+
+\subsection{Evaluation criteria}
+
+The Basque tag set is very fine-grained, with XXX distinct tags appearing in the corpus,
+and the initial ambiguity is very high: the test corpus has, on the average,
+6.7(?) readings per cohort. 
+
+For this reason, we report two variants of the common measures,
+shown in Table~\ref{table:res}.
+The first variant is calculated in the standard way: all readings that 
+are not the uniquely correct one, reduce the precision. 
+The second variant operates on a reduced set of 50 tags, ignoring any additional tags.
+For instance, given an initial ambiguity \t{<noun><sg><Correct!>/<noun><pl>/<verb>}, 
+only removing the verb reading counts as 100 \% precision, even though the cohort is
+not fully disambiguated with regard to number.
+
+
+
+\subsection{Analysis of results}
+Given that recall only improves 2 percentage points, but precision more than 20, the main problem
+seems to be not disambiguating enough, and to only smaller extent removing the right reading.
+
+
+
+
+\begin{table*}[t]
+\centering
+\label{my-label}
+\begin{tabular}{l|l|l|l|l|l|l|}
+\cline{2-7}
+                                                 & \multicolumn{3}{l|}{\textbf{Standard}}            & \multicolumn{3}{l|}{\textbf{50 main categories}}  \\ \cline{2-7} 
+                                                 & \textit{Rec.} & \textit{Prec.} & \textit{F-score} & \textit{Rec.} & \textit{Prec.} & \textit{F-score} \\ \hline
+\multicolumn{1}{|l|}{\textbf{Original grammar}}  & 95.30       & 63.35        & 76.11    &  97.30        &  84.69         &  90.56           \\ \hline
+\multicolumn{1}{|l|}{\textbf{ML-tuned original}} & 93.41       & 68.61        & 79.11    &  96.41        &  87.19         &  91.57           \\ \hline
+\end{tabular}
+\caption{Baseline evaluation with the two metrics.}
+\label{table:res}
+\end{table*}
+
+
+
+
+
+
 \section{Experimental features}
 
 The following techniques are for now just speculation.
@@ -199,9 +250,10 @@ Example:
 
 \begin{verbatim}
 "<lurtarraren>"
-        "lurtar" ADJ ARR IZAUR+ GEN NUMS MUGM ZERO <Correct!>
-        "lurtar" IZE ARR GEN NUMS MUGM ZERO 
-        "lurtar" ADJ ARR IZAUR+ ABS MG
+  "lurtar" ADJ ARR IZAUR+ GEN 
+           NUMS MUGM ZERO <Correct!>
+  "lurtar" IZE ARR GEN NUMS MUGM ZERO 
+  "lurtar" ADJ ARR IZAUR+ ABS MG
 \end{verbatim}
 
 For the given cohort, tags that are only in the correct are \t{GEN} and only in incorrect are \t{IZE, ABS, MG}.
@@ -233,57 +285,17 @@ Two rules may be connected in several ways:
 \item Contradiction: Rules X and Y, in any order, give explicitly different instructions. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Noun}.
 \item ``Feeding order'': Rule X earlier in the sequence enables a later rule Y. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 NOT Noun)}
 \item ``Bleeding order'': Rule X earlier in the sequence blocks a later rule Y. Example:  X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 Noun)}.
-\item Counter(f|bl)eeding order: rules X and Y are reversed. Counterbleeding order is optimal, given that both rules are good: only in this order, both Y and X have a chance to apply. Counterfeeding is suboptimal but tolerable: X will act on the first iteration, and Y only on the second iteration, unless there is another rule that would block Y before.
+\item Counter(f/bl)eeding order: rules X and Y are reversed. Counterbleeding order is optimal, given that both rules are good: only in this order, both Y and X have a chance to apply. Counterfeeding is suboptimal but tolerable: X will act on the first iteration, and Y only on the second iteration, unless there is another rule that would block Y before.
 \item Rule X removes both correct and incorrect readings. Rule Y, if placed before X, renders X unable to act in some cases. Ideally, in the incorrect cases!
 \end{itemize}
 
 The rules could be arranged in the form of a tree, based on how they affect and are affected by other rules. Combined with the feature view, a grammarian could have a look at all rules that target nouns and their dependencies.
 
 
-\section{Evaluation}
-
-We evaluate the grammars with a manually disambiguated corpus of 65,153 tokens/53,429 words,
-compiled from different sources \cite{aduriz2006epec}.
-So far we only report the original score, and the result from ML-tuning the original grammar.
-Later, we will include also the version cleaned by SAT and human attention, as well as
-the result of ML-tuning that.
-Table~\ref{table:res} shows the results.
-
-\begin{table}[]
-\centering
-\label{table:res}
-\begin{tabular}{l|l|l|l|}
-\cline{2-4}
-                                                 & \textbf{Rec.} & \textbf{Prec.} & \textbf{F-score} \\ \hline
-\multicolumn{1}{|l|}{\textbf{Original grammar}}  & 95.30         & 63.35          & 76.11           \\ \hline
-\multicolumn{1}{|l|}{\textbf{ML-tuned original}} & 93.41         & 68.61          & 79.11             \\ \hline
-\end{tabular}
-\caption{Baseline evaluation, ignoring punctuation.}
-\end{table}
-
-
-% \subsection{Evaluation criteria}
-
-% We report two variants of precision, recall and F-score. 
-% The first one is calculated in a straight-forward way: all readings that 
-% are not the uniquely correct one, reduce the precision. The second variant 
-% is more tolerant to ambiguity, if the rule preserves other readings that 
-% have the same POS as the correct reading. 
 
 
 
-% \begin{table*}[]
-% \centering
-% \caption{My caption}
-% \label{my-label}
-% \begin{tabular}{l|l|l|l|l|l|l|}
-% \cline{2-7}
-%                                                  & \multicolumn{3}{l|}{\textbf{Standard}}            & \multicolumn{3}{l|}{\textbf{Tolerant}}            \\ \cline{2-7} 
-%                                                  & \textit{Rec.} & \textit{Prec.} & \textit{F-score} & \textit{Rec.} & \textit{Prec.} & \textit{F-score} \\ \hline
-% \multicolumn{1}{|l|}{\textbf{Original grammar}}  & \~{}92          & \~{}68           & \~{}78       &  98.25        &  87.01         &  92.29           \\ \hline
-% \multicolumn{1}{|l|}{\textbf{ML-tuned original}} & \~{}94          & \~{}72           & \~{}82       &  97           &  89.10         &  92.88           \\ \hline
-% \end{tabular}
-% \end{table*}
+
 
 
 % \section*{Acknowledgments}
