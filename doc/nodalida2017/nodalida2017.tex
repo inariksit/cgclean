@@ -149,8 +149,8 @@ If it says that some rule with a more complex condition is superfluous
 because of another rule earlier in the list\footnote{For example, the latter rule of the following is superfluous: \texttt{REMOVE Verb IF (-1 Det)} and \texttt{REMOVE Verb IF (-1 Det) (1 Verb)}}, 
 then that is a hint for the grammar writer: why are there two similar 
 rules in the grammar, if the simpler one would do?
-At the moment of writing this abstract, we are still working on adding
-the SAT-method to the pipeline, and have no concrete results to report.
+At the moment of writing, we are still working on adding
+the SAT-method to the pipeline, and have only preliminary results to report.
 
 Even if the SAT-method wouldn't find a conflict, we give the rules to 
 a grammarian in any case. The grammarian works with this list, having 
@@ -231,8 +231,34 @@ seems to be not disambiguating enough, and to only smaller extent removing the r
 \end{table*}
 
 
+\subsection{SAT}
 
+Our main problem is the size of the tag set: all possible combinations of tags amount to millions of readings.
+We have worked on a reduced set of 21,000 readings, tailored to address this particular grammar. 
+Unfortunately, 21,000 readings is at the limit of practical: the program can check up to 200 rules at a time, before it uses too much memory on a 4-year-old Macbook Air (1,7 GHz Intel Core i7, 8 GB memory). 
+With these restrictions, the program has found a few redundancies, such as the following:
 
+\begin{verbatim}
+  SELECT ADB IF
+    (0 POSTPOSIZIOAK-9) 
+    (-1 IZE-DET-IOR-ADJ-ELI-SIG + INE) ;
+  SELECT ADB IF  
+    (0 ("<barrena>")) (-1 INE) ;
+\end{verbatim}
+
+\noindent The problem is that the set POSTPOSIZIOAK-9 contains the word form ``barrena'', and the other set contains the tag INE; hence the latter rule is redundant.
+
+Internal conflicts are easier to find, since they only need to run one rule at a time. 
+
+REMOVE (ADI) IF (NOT 0 ADI) (1 BAT) ;
+SELECT (ADI) IF (0C ADI LINK 0 IZE) (NOT 0 POSPOZ) (1 ADPOSAG);
+
+\subsection{ML-tuning}
+
+Undoubtedly, ML-tuning is the method with the best improvement in the F-score. 
+Previous experiences of ML-tuning \cite{bick2013tuning,bick_hagen2015obt} report something TODO; we agree or disagree with them.
+While ML-tuning improves the grammar's performance, it makes it less readable for human eyes.
+It is hard to continue development after submitting the grammar to a black box and getting the output.
 
 
 \section{Experimental features}
