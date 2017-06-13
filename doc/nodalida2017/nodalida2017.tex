@@ -188,30 +188,58 @@ common, and the majority of the bad rules were bad already when they were born.
 
 We evaluate the grammars with a manually disambiguated corpus of 65,153 tokens/53,429 words,
 compiled from different sources \cite{aduriz2006epec}.
-So far we only report the original score, and the result from ML-tuning the original grammar.
-Later, we will include also the version cleaned by SAT and human attention, as well as
-the result of ML-tuning that.
+We report the original score, and the result from ML-tuning the original grammar, 
+as well as the result of preliminary cleanup. 
+%Since our work is very much in progress, the latter grammar has lower F-score than the original.
+The scores are given using two metrics, differing on the granularity of the tagset.
 
 \subsection{Evaluation criteria}
 
-The Basque tag set is very fine-grained, with XXX distinct tags appearing in the corpus,
-and the initial ambiguity is very high: the test corpus has, on the average,
-6.7(?) readings per cohort. 
+The Basque tag set is structured in four levels of granularity. 
+As explained in \newcite{ezeiza1998basque}, the first level contains only the main POS, 20 distinct tags,
+and the fourth level contains several hundreds of tags with fine-grained distinctions, including semantic tags such as animacy.
+Table~\ref{table:levels} shows a simplified example of the levels for noun.
+On the 4th level, the initial ambiguity is very high: the test corpus has, on the average,
+\textbf{XXX} readings per cohort. On the 2nd level, when readings that differ only in 
+higher-level tags are collapsed into one, the initial ambiguity is \textbf{YYY} readings per cohort.
+We follow the scheme for evaluation: assume that we are left with two readings, ``Common noun, singular''
+and ``Common noun, plural'', and one of them is correct. Evaluation on levels 3 and 4 reports 100 \% recall and 50 \% precision.
+Evaluation on levels 1 and 2 ignores the tags from the higher levels, and regards any common noun or noun as correct, hence 100 \% for both measures. 
 
-For this reason, we report two variants of the common measures,
-shown in Table~\ref{table:res}.
-The first variant is calculated in the standard way: all readings that 
-are not the uniquely correct one, reduce the precision. 
-The second variant operates on a reduced set of 50 tags, ignoring any additional tags.
-For instance, given an initial ambiguity \t{<noun><sg><Correct!>/<noun><pl>/<verb>}, 
-only removing the verb reading counts as 100 \% precision, even though the cohort is
-not fully disambiguated with regard to number.
+%the 8 noun readings on level 4 would be collapsed to four readings on level 3, two on level 2 and one on level 1.
+%As for evaluation, any correct noun reading would give 100%  precision and recall on level 1, and 50% on level 2. 
+
+\begin{table*}[t]
+\centering
+\begin{tabular}{llll}
+
+\hline
+\multicolumn{1}{|l|}{\textbf{Level 1}} & \multicolumn{1}{l|}{\textbf{Level 2}}                                                  & \multicolumn{1}{l|}{\textbf{Level 3}}                                                                                                                                                          & \multicolumn{1}{l|}{\textbf{Level 4}}                                                                                                                                                                                                        \\ \hline
+\multicolumn{1}{|l|}{Noun}             & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}Common noun\\ Proper noun\end{tabular}} & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}Common noun, plural absolutive\\ Common noun, singular ergative\\ Proper noun, plural absolutive\\ Proper noun, singular ergative\end{tabular}} & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}Common noun, plural absolutive, animate\\ Common noun, plural absolutive, inanimate\\ ...\\ Proper noun, singular ergative, animate\\ Proper noun, singular ergative, inanimate\end{tabular}} \\ \hline
+
+\end{tabular}
+\caption{Levels of granularity}
+\label{table:levels}
+\end{table*}
 
 
 
-\subsection{Analysis of results}
-Given that recall only improves 2 percentage points, but precision more than 20, the main problem
-seems to be not disambiguating enough, and to only smaller extent removing the right reading.
+\subsection{Analysis of the results}
+
+The results of the preliminary evaluation are in Table~\ref{table:res}. 
+The grammar shows worse performance after a preliminary cleanup---most likely the result is due to ordering. 
+We found it easier to work on the grammar after grouping and sorting the rules, and while
+the cleanup is still in progress, we did not settle to a final order yet. The fourth row of Table~\ref{table:res} shows the 
+ML-tuning applied to the pre-cleaned, initially sorted grammar. We could've tried to mimic the original order
+after the initial steps, but we chose not to spend such an effort at the current stage of the work. 
+Instead, we keep working on the task on two fronts: the human labour driven by linguistic insight, 
+and adapting the computational techniques to reveal more details.
+
+
+
+
+%Given that recall only improves 2 percentage points, but precision more than 20, the main problem
+%seems to be not disambiguating enough, and to only smaller extent removing the right reading.
 
 
 
@@ -221,22 +249,31 @@ seems to be not disambiguating enough, and to only smaller extent removing the r
 \label{my-label}
 \begin{tabular}{l|l|l|l|l|l|l|}
 \cline{2-7}
-                                                 & \multicolumn{3}{l|}{\textbf{Standard}}            & \multicolumn{3}{l|}{\textbf{50 main categories}}  \\ \cline{2-7} 
+                                                 & \multicolumn{3}{l|}{\textbf{All tags} (Level 4)}            & \multicolumn{3}{l|}{\textbf{50 main categories} (Level 2)}  \\ \cline{2-7} 
                                                  & \textit{Rec.} & \textit{Prec.} & \textit{F-score} & \textit{Rec.} & \textit{Prec.} & \textit{F-score} \\ \hline
-\multicolumn{1}{|l|}{\textbf{Original grammar}}  & 95.30       & 63.35        & 76.11    &  97.30        &  84.69         &  90.56           \\ \hline
-\multicolumn{1}{|l|}{\textbf{ML-tuned original}} & 93.41       & 68.61        & 79.11    &  96.41        &  87.19         &  91.57           \\ \hline
+\multicolumn{1}{|l|}{\textbf{Original grammar--Numbers before we did anything}}     & ??       & ??        & ??    &  ??        &  ??        &  ??           \\ \hline
+\multicolumn{1}{|l|}{\textbf{ML-tuned original}}     & ??       & ??        & ??    &  ??        &  ??         &  ??           \\ \hline
+\multicolumn{1}{|l|}{\textbf{Preliminary cleanup---TODO: latest numbers}}  & 95.30       & 63.35        & 76.11    &  97.30        &  84.69         &  90.56           \\ \hline
+\multicolumn{1}{|l|}{\textbf{ML-tuned prel.cl.}}       & 93.41       & 68.61        & 79.11    &  96.41        &  87.19         &  91.57           \\ \hline
 \end{tabular}
-\caption{Baseline evaluation with the two metrics.}
+\caption{Baseline evaluation with the two levels.}
 \label{table:res}
 \end{table*}
 
 
-\subsection{SAT}
 
-Our main problem is the size of the tag set: all possible combinations of tags amount to millions of readings.
-We have worked on a reduced set of 21,000 readings, tailored to address this particular grammar. 
-Unfortunately, 21,000 readings is at the limit of practical: the program can check up to 200 rules at a time, before it uses too much memory on a 4-year-old Macbook Air (1,7 GHz Intel Core i7, 8 GB memory). 
-With these restrictions, the program has found a few redundancies, such as the following:
+\paragraph{Conflict check}
+
+%We have worked on a reduced set of 21,000 readings, tailored to address this particular grammar. 
+%Unfortunately, 21,000 readings is at the limit of practical: the program can check up to 200 rules at a time, before it uses too much memory on a 4-year-old Macbook Air (1,7 GHz Intel Core i7, 8 GB memory). 
+
+Our main problem is the size of the tag set: all possible combinations of tags on level 4 amount to millions of readings,
+and that would make the SAT-problems too big.
+We cannot just ignore all tags beyond level 2 or 3, because many of the rules rely on them as contexts.
+
+As a first approximation, we have created a reduced set of 21000 readings, which allows the program to check up to 200 
+rules at a time before running out of memory. We have not run the whole grammar with this setup, but among the first rules we tested, it has found a few conflicts.
+An example follows:
 
 \begin{verbatim}
   SELECT ADB IF
@@ -246,22 +283,56 @@ With these restrictions, the program has found a few redundancies, such as the f
     (0 ("<barrena>")) (-1 INE) ;
 \end{verbatim}
 
-\noindent The problem is that the set POSTPOSIZIOAK-9 contains the word form ``barrena'', and the other set contains the tag INE; hence the latter rule is redundant.
+\noindent The problem is that the set \texttt{POSTPOSIZIOAK-9} contains the word form ``barrena'', and the other set contains the tag \texttt{INE}; hence the latter rule is redundant.
 
-Internal conflicts are easier to find, since they only need to run one rule at a time. 
 
-REMOVE (ADI) IF (NOT 0 ADI) (1 BAT) ;
-SELECT (ADI) IF (0C ADI LINK 0 IZE) (NOT 0 POSPOZ) (1 ADPOSAG);
+Our second strategy is to reduce the rules themselves: from a rule such as \texttt{SELECT Verb + Sg IF (1 Noun + Sg)},
+we just remove all tags higher than level 2, resulting in \texttt{SELECT Verb IF (1 Noun)}. We also keep all lexical tags intact: 
+we modified the scheme from the previous experiments \cite{listenmaa_claessen2016} and allow lexical forms to attach freely 
+to any morphological tags, so allowing some hundreds or thousands of lexical forms does not pose any problems.
+This setup analyses the whole grammar, in the given order, in approximately 1 hour. 
+With the reduced rules, the program would not find the redundancy described earlier, because
+the conflict lies in the 3rd-level tag \texttt{INE}. But this approximation found successfully 11 duplicates or near-duplicates in the whole grammar, such as the following:
 
-\subsection{ML-tuning}
+\begin{verbatim}
+SELECT IZE IF 	 # line 817
+  (0 POSTPOSIZIOAK-10IZE LINK 0 IZE_ABS_MG) 
+  (-1 IZE-DET-IOR-ADJ-ELI-SIG + GEN) ; 
+SELECT IZE IF 	 # line 829
+  (0 POSTPOSIZIOAK-10IZE + IZE_ABS_MG) 
+  (-1 IZE-DET-IOR-ADJ-ELI-SIG + GEN) ;
+\end{verbatim}
+
+\noindent Both of the contextual tests contain 3rd-level tags (\texttt{ABS, MG, GEN}), but removing them keeps the sets identical, hence it is not a problem for the conflict check.
+
+
+
+Finally, all setups have found some internal conflicts. In order to get a more reliable account, we would need 
+more accurate tagset, beyond the 21000. But on the other hand, many internal conflicts can be detected by simpler means:
+using STRICT-TAGS would reveal illegal tags, which are the reason for a large number of internal conflicts. 
+But some cases are due to a mistake in logic, rather than a typo; examples such as the following are easily found by the tool. %elow are some examples of the internal conflicts found by the tool:
+
+\begin{verbatim}
+  REMOVE ADI IF (NOT 0 ADI) (1 BAT) ;
+  SELECT ADI IF (0C ADI LINK 0 IZE) ;
+\end{verbatim}
+
+\noindent The first rule is clearly an error; it is impossible to remove an ADI from a reading that does not have one.
+The conflict likely stems from a confusion between \texttt{NOT X} and \texttt{(*) - X};
+The second rule is not obvious to the eye; the interplay of \texttt{0C} and \texttt{LINK 0} requires 
+\texttt{ADI} and \texttt{IZE} in the same reading, which is not possible\footnote{ADI is a verb, IZE is a noun}.
+
+%We have found the conflict check helpful for the grammarians: it is useful information to know about redundancies. But so far
+
+\paragraph{ML-tuning}
 
 Undoubtedly, ML-tuning is the method with the best improvement in the F-score. 
-Previous experiences of ML-tuning \cite{bick2013tuning,bick_hagen2015obt} report something TODO; we agree or disagree with them.
+Previous experiments on ML-tuning \cite{bick2013tuning,bick_hagen2015obt} report something TODO; we agree or disagree with them.
 While ML-tuning improves the grammar's performance, it makes it less readable for human eyes.
 It is hard to continue development after submitting the grammar to a black box and getting the output.
 
 
-\section{Experimental features}
+\section{Wishlist for future work}
 
 The following techniques are for now just speculation.
 
