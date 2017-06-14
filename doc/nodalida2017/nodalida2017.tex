@@ -272,8 +272,8 @@ and that would make the SAT-problems too big.
 We cannot just ignore all tags beyond level 2 or 3, because many of the rules rely on them as contexts.
 
 As a first approximation, we have created a reduced set of 21000 readings, which allows the program to check up to 200 
-rules at a time before running out of memory. We have not run the whole grammar with this setup, but among the first rules we tested, it has found a few conflicts.
-An example follows:
+rules at a time before running out of memory. We are still developing better solutions, and have not run the whole grammar with this setup.
+Among the first rules we tested, it has found a few redundancies, such as the following:
 
 \begin{verbatim}
   SELECT ADB IF
@@ -283,16 +283,16 @@ An example follows:
     (0 ("<barrena>")) (-1 INE) ;
 \end{verbatim}
 
-\noindent The problem is that the set \texttt{POSTPOSIZIOAK-9} contains the word form ``barrena'', and the other set contains the tag \texttt{INE}; hence the latter rule is redundant.
+\noindent The problem is that the set \texttt{POSTPOSIZIOAK-9} contains the word form ``barrena'', and the other set contains the tag \texttt{INE}; in other words, the latter rule is fully contained in the first rule and hence redundant.
 
 
 Our second strategy is to reduce the rules themselves: from a rule such as \texttt{SELECT Verb + Sg IF (1 Noun + Sg)},
 we just remove all tags higher than level 2, resulting in \texttt{SELECT Verb IF (1 Noun)}. We also keep all lexical tags intact: 
 we modified the scheme from the previous experiments \cite{listenmaa_claessen2016} and allow lexical forms to attach freely 
-to any morphological tags, so allowing some hundreds or thousands of lexical forms does not pose any problems.
+to any morphological tags, so allowing some hundreds or thousands of lexical forms does not create an explosion of SAT-variables.
 This setup analyses the whole grammar, in the given order, in approximately 1 hour. 
 With the reduced rules, the program would not find the redundancy described earlier, because
-the conflict lies in the 3rd-level tag \texttt{INE}. But this approximation found successfully 11 duplicates or near-duplicates in the whole grammar, such as the following:
+the problem lies in the 3rd-level tag \texttt{INE}. But this approximation found successfully 11 duplicates or near-duplicates in the whole grammar, such as the following:
 
 \begin{verbatim}
 SELECT IZE IF 	 # line 817
@@ -332,11 +332,12 @@ While ML-tuning improves the grammar's performance, it makes it less readable fo
 It is hard to continue development after submitting the grammar to a black box and getting the output.
 
 
-\section{Wishlist for future work}
+\section{Wishlist / Future work}
+ \textbf{The following section is just a draft, I will work on it still! If you have comments regarding the content, or suggestions for additions, or your own wishlist, you can comment on that too. But don't worry too much about the quality of writing or presentation, it's just random thoughts scattered around!}
 
-The following techniques are for now just speculation.
+%The following techniques are for now just speculation.
 
-They can work either with a corpus, or a good description of possible ambiguity classes in the language.
+%They can work either with a corpus, or a good description of possible ambiguity classes in the language.
 
 \subsection{Minimisation of tags}
 
