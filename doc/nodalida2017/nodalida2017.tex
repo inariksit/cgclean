@@ -19,16 +19,19 @@
 
 \title{Cleaning up the Basque grammar: a work in progress}
 
-% \author{First Author \\
-%   Affiliation / Address line 1 \\
-%   Affiliation / Address line 2 \\
-%   Affiliation / Address line 3 \\
-%   {\tt email@domain} \\\And
-%   Second Author \\
-%   Affiliation / Address line 1 \\
-%   Affiliation / Address line 2 \\
-%   Affiliation / Address line 3 \\
-%   {\tt email@domain} \\}
+ \author{Inari Listenmaa \\
+   {\small University of Gothenburg} \\
+   {\tt \small inari@chalmers.se} \\\And
+   Jose Maria Arriola \\
+   {\small University of the Basque Country} \\
+   {\tt \small josemaria.arriola@ehu.eus} \\ \And
+   Itziar Aduriz \\
+   {\small University of Barcelona} \\
+   {\tt \small itziar.aduriz@ub.edu} \\ \And
+   Eckhard Bick \\
+   {\small University of Southern Denmark} \\
+   {\tt \small eckhard.bick@mail.dk} \\   
+ }
 
 \def\t#1{\texttt{#1}}
 
@@ -74,7 +77,6 @@ steps, we give the grammar as an input for ML-tuning.
 
 \begin{figure*}[t]
 \centering
-\label{fig:sorted}
 \begin{tabular}{lr}
 \t{SELECT ADOIN IF (1 ARAZI) ;}                         & \t{\# line 7412} \\
 \t{REMOVE ADOIN IF (0 IZE) (1C ADJ) ;}                  & \t{\# line 6423} \\
@@ -83,7 +85,7 @@ steps, we give the grammar as an input for ML-tuning.
 \t{REMOVE ADOIN IF (0 IZE) (-1C IZE) (1C ADJ) ;}        & \t{\# line 6422} \\
 \end{tabular}
 \caption{Rules grouped by target, and ordered by their contextual tests.}
-
+\label{fig:sorted}
 \end{figure*}
 
 
@@ -96,7 +98,7 @@ Transform word forms into case-insensitive, remove duplicates.
 There were many occurrences of identical rules, of the form \texttt{REMOVE ("<x>")} and \texttt{REMOVE ("<X>")}. We changed those rules into the form \texttt{REMOVE ("<x>"i)}, and removed duplicate rules after that.
 
 \paragraph{Tagset operations}
-The VISL CG-3 compiler offers useful features, such as \texttt{--show-unused-sets} and \texttt{--show-tags}. With the former, we could eliminate 255 unused tagsets, and with the latter, we detected 15 obsolete or misspelled tags in the remaining used tagsets, by comparing against an up-to-date morphological lexicon.
+The VISL CG-3 compiler offers useful features, such as \texttt{--show-unused-sets} and \texttt{--show-tags}. With the former, we could eliminate 255 unused tagsets, and with the latter, we detected 15 obsolete or misspelled tags in the remaining used tagsets, by comparing against an up-to-date lexical database \cite{aldezabal2001edbl}.
 
 % A special case, which occurred 4 of the 15 times, was to use a set in place of a tag name, such as in Figure~\ref{fig:tagnames}.
 
@@ -149,40 +151,64 @@ If it says that some rule with a more complex condition is superfluous
 because of another rule earlier in the list\footnote{For example, the latter rule of the following is superfluous: \texttt{REMOVE Verb IF (-1 Det)} and \texttt{REMOVE Verb IF (-1 Det) (1 Verb)}}, 
 then that is a hint for the grammar writer: why are there two similar 
 rules in the grammar, if the simpler one would do?
-At the moment of writing, we are still working on adding
-the SAT-method to the pipeline, and have only preliminary results to report.
+At the moment of writing, we are still looking for better ways to adapt the conflict check
+to the Basque grammar; due to the large number of tags, we cannot use the system out of the box.
+We describe the adaptations we have done so far in Section~\ref{analysis},
+as well as some preliminary results.
 
-Even if the SAT-method wouldn't find a conflict, we give the rules to 
+\subsection{Manual cleanup}
+\label{manual} 
+
+Even if the program wouldn't find any conflicts, we give the rules to 
 a grammarian in any case. The grammarian works with this list, having 
 the original grammar on the side to see the comments, or other original 
-context of any given rule. Seeing all the rules grouped helps with the 
+context of any given rule. 
+On the one hand, seeing all the rules grouped helps with the 
 situation where different grammarians have written rules independent of 
-each other. The grammarian can do their manual modifications either on 
-the original grammar, or to this grouped version.
+each other. On the other hand, working with the ordered grammar makes
+it difficult to compare the precision, recall and F-score to the
+original grammar in the intermediate stages of the cleanup. 
 
-This sorting and grouping is not meant to be the final order, it is only 
+In any case, the sorting and grouping is not meant to be the final order, it is only 
 to help a human grammarian to make decisions regarding all the rules that 
 target the same tagsets.
+An easy alternative would be to work on the original grammar instead, only
+keeping the sorted list as a help and generating new ones as the
+cleanup proceeds. However, we found it easier to work directly on the
+sorted list. To solve the problem of intermediate evaluation, we
+decided to compare the results by ML-tuning both the original and the
+ordered grammar.
 
-\subsection{Ordering: ML-tuning}
+\subsection{ML-tuning}
 Once the grammar has gone through the previous steps, we give it to the 
 ML-tuning tool \cite{bick2013tuning}, with the purpose of finding an 
-optimal order. Then we can run the newly ordered grammar through SAT-evaluation,
-to detect if the ML-tuning has introduced new conflicts or superfluous rules.
+optimal order. Then we can run the newly ordered grammar through the
+conflict check, to detect if the ML-tuning has introduced new
+conflicts or superfluous rules.
 
 Our initial hypothesis is that the human-cleaned version will benefit more 
 from tuning than the original grammar. Some bad rules may have only a minor 
 problem, such as a single tag name having changed meaning, and they would be 
 better fixed by updating the obsolete tag, instead of the whole rule being 
-demoted or killed. 
-To test our assumptions, we run ML-tuning for both the original grammar and 
-the human-cleaned version: it is also possible that this error type is not very 
-common, and the majority of the bad rules were bad already when they were born.
+demoted or killed. To test our assumptions, we tune both the original
+grammar and the human-cleaned versions, continuously comparing the new
+versions to the original.
+% it is also possible that this error type is not very 
+%common, and the majority of the bad rules were bad already when they were born.
 
 % We are also interested to find out whether there are some rules or rule types 
 % that are consistently missed by one of the tuning methods. 
 
-%We compare the performance of the grammar in its original state, and the cleaned up version. 
+%We compare the performance of the grammar in its original state, and
+%the cleaned up version. 
+
+\subsection{Final order}
+
+After checking the conflicts and redundancies of the grammar the
+linguists will proceed to reorder the grammar by defining the sections
+of the grammar corresponding to each level of granularity of the Basque tag set.
+
+
 
 \section{Evaluation}
 
@@ -190,7 +216,6 @@ We evaluate the grammars with a manually disambiguated corpus of 65,153 tokens/5
 compiled from different sources \cite{aduriz2006epec}.
 We report the original score, and the result from ML-tuning the original grammar, 
 as well as the result of preliminary cleanup. 
-%Since our work is very much in progress, the latter grammar has lower F-score than the original.
 The scores are given using two metrics, differing on the granularity of the tagset.
 
 \subsection{Evaluation criteria}
@@ -198,16 +223,18 @@ The scores are given using two metrics, differing on the granularity of the tags
 The Basque tag set is structured in four levels of granularity. 
 As explained in \newcite{ezeiza1998basque}, the first level contains only the main POS, 20 distinct tags,
 and the fourth level contains several hundreds of tags with fine-grained distinctions, including semantic tags such as animacy.
-Table~\ref{table:levels} shows a simplified example of the levels for noun.
-On the 4th level, the initial ambiguity is very high: the test corpus has, on the average,
-\textbf{XXX} readings per cohort. On the 2nd level, when readings that differ only in 
-higher-level tags are collapsed into one, the initial ambiguity is \textbf{YYY} readings per cohort.
+Table~\ref{table:levels} shows a simplified example of the levels for nouns.
+On the 4th level, the initial ambiguity is very high: the test corpus has, on average,
+3.96 readings per cohort. On the 2nd level, when readings that differ only in 
+higher-level tags are collapsed into one, the initial ambiguity is 2.41 readings per cohort.
 We follow the scheme for evaluation: assume that we are left with two readings, ``Common noun, singular''
 and ``Common noun, plural'', and one of them is correct. Evaluation on levels 3 and 4 reports 100 \% recall and 50 \% precision.
 Evaluation on levels 1 and 2 ignores the tags from the higher levels, and regards any common noun or noun as correct, hence 100 \% for both measures. 
 
-%the 8 noun readings on level 4 would be collapsed to four readings on level 3, two on level 2 and one on level 1.
-%As for evaluation, any correct noun reading would give 100%  precision and recall on level 1, and 50% on level 2. 
+It should be noted that the linguistic revision has been targeted
+towards improving the 2nd level. 
+%Nevertheless, the score on both levels improves
+
 
 \begin{table*}[t]
 \centering
@@ -225,16 +252,25 @@ Evaluation on levels 1 and 2 ignores the tags from the higher levels, and regard
 
 
 \subsection{Analysis of the results}
+\label{analysis}
 
 The results of the preliminary evaluation are in Table~\ref{table:res}. 
-The grammar shows worse performance after a preliminary cleanup---most likely the result is due to ordering. 
-We found it easier to work on the grammar after grouping and sorting the rules, and while
-the cleanup is still in progress, we did not settle to a final order yet. The fourth row of Table~\ref{table:res} shows the 
-ML-tuning applied to the pre-cleaned, initially sorted grammar. We could've tried to mimic the original order
-after the initial steps, but we chose not to spend such an effort at the current stage of the work. 
-Instead, we keep working on the task on two fronts: the human labour driven by linguistic insight, 
-and adapting the computational techniques to reveal more details.
+The drop in performance after the preliminary cleanup is most certainly due to ordering---we found it 
+easier to work on the grammar directly after grouping and sorting the rules, as shown in
+Figure~\ref{fig:sorted}. 
+%Both precision and recall get worse, 
+% The worst drop is in precision; from 62 \% to 56 \% on the full tagset,
+%which suggests that the alphabetical ordering blocks many rules from firing.
+ML-tuning the cleaned grammar brings the precision up, indicating that
+more rules get to fire in the tuned order. The difference is most
+dramatic in the sorted and grouped grammar on the 4th level: the
+original precision drops from 62 \% to 56 \%, and goes up to 68 \%
+with the ML-tuning. 
 
+As explained in Section~\ref{manual}, the fairest test at this stage is to compare the
+ML-tuned results of the original and the cleaned grammar.
+We see the cleaned and tuned grammar slightly outperforming the tuned original;
+the difference is not large, but we see it as a promising start.
 
 
 
@@ -246,21 +282,22 @@ and adapting the computational techniques to reveal more details.
 
 \begin{table*}[t]
 \centering
-\label{my-label}
 \begin{tabular}{l|l|l|l|l|l|l|}
 \cline{2-7}
-                                                 & \multicolumn{3}{l|}{\textbf{All tags} (Level 4)}            & \multicolumn{3}{l|}{\textbf{50 main categories} (Level 2)}  \\ \cline{2-7} 
+                                                 & \multicolumn{3}{l|}{\textbf{All tags} (Level 4)}            & \multicolumn{3}{l|}{\textbf{48 main categories} (Level 2)}  \\ \cline{2-7} 
                                                  & \textit{Rec.} & \textit{Prec.} & \textit{F-score} & \textit{Rec.} & \textit{Prec.} & \textit{F-score} \\ \hline
-\multicolumn{1}{|l|}{\textbf{Original grammar--Numbers before we did anything}}     & ??       & ??        & ??    &  ??        &  ??        &  ??           \\ \hline
-\multicolumn{1}{|l|}{\textbf{ML-tuned original}}     & ??       & ??        & ??    &  ??        &  ??         &  ??           \\ \hline
-\multicolumn{1}{|l|}{\textbf{Preliminary cleanup---TODO: latest numbers}}  & 95.30       & 63.35        & 76.11    &  97.30        &  84.69         &  90.56           \\ \hline
-\multicolumn{1}{|l|}{\textbf{ML-tuned prel.cl.}}       & 93.41       & 68.61        & 79.11    &  96.41        &  87.19         &  91.57           \\ \hline
+\multicolumn{1}{|l|}{\textbf{Original grammar}}     
+					    & \textbf{95.61}  & 62.99         &  75.94         & \textbf{97.48}  &  84.37           &  90.45           \\ \hline
+\multicolumn{1}{|l|}{\textbf{ML-tuned original}}    
+					    & 93.87          & 68.06             &  78.91              & 96.66          &  86.82           &  91.48            \\ \hline
+\multicolumn{1}{|l|}{\textbf{Preliminary cleanup}}  
+					   & 94.81           & 56.56             & 70.85               &  96.82         &  84.13           &  90.03           \\ \hline
+\multicolumn{1}{|l|}{\textbf{ML-tuned prel.cl.}}      
+					   & 93.41           & \textbf{68.61}  & \textbf{79.11}   &  96.41        &  \textbf{87.19}   &  \textbf{91.57}           \\ \hline
 \end{tabular}
-\caption{Baseline evaluation with the two levels.}
+\caption{Preliminary evaluation on words, excluding punctuation, for levels 4 and 2 of granularity.}
 \label{table:res}
 \end{table*}
-
-
 
 \paragraph{Conflict check}
 
@@ -287,9 +324,10 @@ Among the first rules we tested, it has found a few redundancies, such as the fo
 
 
 Our second strategy is to reduce the rules themselves: from a rule such as \texttt{SELECT Verb + Sg IF (1 Noun + Sg)},
-we just remove all tags higher than level 2, resulting in \texttt{SELECT Verb IF (1 Noun)}. We also keep all lexical tags intact: 
-we modified the scheme from the previous experiments \cite{listenmaa_claessen2016} and allow lexical forms to attach freely 
-to any morphological tags, so allowing some hundreds or thousands of lexical forms does not create an explosion of SAT-variables.
+we just remove all tags higher than level 2, resulting in
+\texttt{SELECT Verb IF (1 Noun)}. We also keep all lexical tags
+intact, but unlike in \newcite{listenmaa_claessen2016}, we allow them to attach to any morphological tags; this may
+lead to further false negatives, but reduces the size of the SAT-problem.
 This setup analyses the whole grammar, in the given order, in approximately 1 hour. 
 With the reduced rules, the program would not find the redundancy described earlier, because
 the problem lies in the 3rd-level tag \texttt{INE}. But this approximation found successfully 11 duplicates or near-duplicates in the whole grammar, such as the following:
@@ -308,9 +346,9 @@ SELECT IZE IF 	 # line 829
 
 
 Finally, all setups have found some internal conflicts. In order to get a more reliable account, we would need 
-more accurate tagset, beyond the 21000. But on the other hand, many internal conflicts can be detected by simpler means:
+more accurate tagset, beyond the 21000. To be fair, many internal conflicts can be detected by simpler means:
 using STRICT-TAGS would reveal illegal tags, which are the reason for a large number of internal conflicts. 
-But some cases are due to a mistake in logic, rather than a typo; examples such as the following are easily found by the tool. %elow are some examples of the internal conflicts found by the tool:
+But some cases are due to a mistake in logic, rather than a typo; examples such as the following were easily found by the tool. %elow are some examples of the internal conflicts found by the tool:
 
 \begin{verbatim}
   REMOVE ADI IF (NOT 0 ADI) (1 BAT) ;
@@ -326,24 +364,116 @@ The second rule is not obvious to the eye; the interplay of \texttt{0C} and \tex
 
 \paragraph{ML-tuning}
 
-Undoubtedly, ML-tuning is the method with the best improvement in the F-score. 
-Previous experiments on ML-tuning \cite{bick2013tuning,bick_hagen2015obt} report something TODO; we agree or disagree with them.
-While ML-tuning improves the grammar's performance, it makes it less readable for human eyes.
-It is hard to continue development after submitting the grammar to a black box and getting the output.
+So far, the most important use of the ML-tuning has been to overcome
+the differences in ordering. 
+Given the preliminary nature of the work, we have not tried multiple
+variations. We used a development corpus of 61,524
+tokens and a test corpus of 65,153 tokens; the same which we used to
+obtain the scores in Table~\ref{table:res}. We stopped the tuning
+after 5 iterations, and used an error threshold of 25 \% to consider a
+rule as ``good'' or ``bad''. 
+
+In the future, as the grammar cleanup advances, we are interested in
+trying out different settings.
+% as we approach the task of finding an optimal order. 
+Already in our current stage, ML-tuning has clearly
+improved the precision, for both original and preliminarily cleaned
+grammars, and for both levels of granularity; it is likely that
+experimenting with different parameters, we would find a combination
+that would also improve the recall, like \newcite{bick2013tuning} 
+and \newcite{bick_hagen2015obt} report.
+However, while ML-tuning improves the grammar's performance, it makes
+it less readable for human eyes, and continuing the development is
+harder. Thus we might settle to two versions of the grammar: one for
+maintenance, and other for running.
 
 
-\section{Wishlist / Future work}
- \textbf{The following section is just a draft, I will work on it still! If you have comments regarding the content, or suggestions for additions, or your own wishlist, you can comment on that too. But don't worry too much about the quality of writing or presentation, it's just random thoughts scattered around!}
-
-%The following techniques are for now just speculation.
-
-%They can work either with a corpus, or a good description of possible ambiguity classes in the language.
-
-\subsection{Minimisation of tags}
 
 
-Take a test corpus/ambiguity classes, look at the readings, 
-group tags by those that discriminate between correct and incorrect readings.
+% \section{Future work}
+
+% We have identified a number of features that might help the grammar
+% writing process. The following list is mostly speculation, or more of
+% a wish list, rather than us planning to implement all of this.
+
+% %The following techniques are for now just speculation.
+
+% %They can work either with a corpus, or a good description of possible ambiguity classes in the language.
+
+% \subsection{Minimisation of tags used in the rules}
+
+% Take a test corpus/ambiguity classes, look at the readings, 
+% group tags by those that discriminate between correct and incorrect readings.
+% Example:
+
+% \begin{verbatim}
+% "<lurtarraren>"
+%   "lurtar" ADJ ARR IZAUR+ GEN 
+%            NUMS MUGM ZERO <Correct!>
+%   "lurtar" IZE ARR GEN NUMS MUGM ZERO 
+%   "lurtar" ADJ ARR IZAUR+ ABS MG
+% \end{verbatim}
+
+% For the given cohort, tags that are only in the correct are \t{GEN} and only in incorrect are \t{IZE, ABS, MG}.
+% In other words, we learn that a rule that would target e.g. \t{ZERO} or \t{IZAUR+} would not remove all ambiguity.
+% We can compute these tags for all cohorts/ambiguity classes, and see if some rules in the grammar could be simplified.
+
+
+% \subsection{Views on grammar}
+
+% There are many ways to order the rules in a grammar. For better maintainability, 
+% it makes sense to place all rules that target certain phenomena together.
+% On the other hand, some rules may be very heuristic, and don't make sense to be in the same section.
+
+% We propose a solution of different \emph{views} on the grammar.
+% \begin{itemize}
+% \item Base order: Whichever criteria that make the grammar
+%   maintainable. The rest of the views can be generated from this view.
+% \item Running order: can be optimised with ML-tuning, no need to be human-readable
+% %\item Sorted by feature: for the ease of the grammarian to find all rules that target the same phenomena.
+% %For example, ``all rules that target nouns'', ``all rules that mention postpositions in their contextual tests''.
+% \item Tree view of rule dependencies. See next section about that.
+% \end{itemize}
+
+
+
+% \subsubsection{Tree view of rule dependencies}
+
+% Two rules may be connected in several ways:
+
+% \begin{itemize}
+% \item Contradiction: Rules X and Y, in any order, give explicitly different instructions. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Noun}.
+% \item ``Feeding order'': Rule X earlier in the sequence enables a later rule Y. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 NOT Noun)}
+% \item ``Bleeding order'': Rule X earlier in the sequence blocks a later rule Y. Example:  X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 Noun)}.
+% \item Counter(f/bl)eeding order: rules X and Y are reversed. Counterbleeding order is optimal, given that both rules are good: only in this order, both Y and X have a chance to apply. Counterfeeding is suboptimal but tolerable: X will act on the first iteration, and Y only on the second iteration, unless there is another rule that would block Y before.
+% \item Rule X removes both correct and incorrect readings. Rule Y, if placed before X, renders X unable to act in some cases. Ideally, in the incorrect cases!
+% \end{itemize}
+
+% The rules could be arranged in the form of a tree, based on how they affect and are affected by other rules. Combined with the feature view, a grammarian could have a look at all rules that target nouns and their dependencies.
+
+\section{Conclusions and future work}
+
+After checking the soundness of the grammar by means of some simple
+tools, we are aware that in the near future we will need more complex
+utilities for helping the grammar writing.
+The following items are on our wish list:
+
+\begin{itemize}
+\item Flexible rule ordering, possibly implemented as different views
+  in the CG IDE. The base order would be one that is easily
+  maintainable and linguistically motivated, and any other orders can
+  be generated from the base order.
+\item Finding deeper connections between the rules. So far we have used the
+  SAT-based conflict check to run the grammar in order, but we would
+  like to develop this further: take any given rule, and give a list
+  of all the rules, anywhere in the grammar, that potentially feed to
+  it or block it. The biggest problem in developing such a method is
+  the size of the tagset. 
+\item Tagset minimisation: it is possible that some of the level 4 or
+  3 tags used in the rules could be removed without it affecting the
+  functionality of the grammar. Using a development corpus, we could
+  find the minimal set of tags that discriminate between correct and
+  incorrect readings.
 Example:
 
 \begin{verbatim}
@@ -357,40 +487,13 @@ Example:
 For the given cohort, tags that are only in the correct are \t{GEN} and only in incorrect are \t{IZE, ABS, MG}.
 In other words, we learn that a rule that would target e.g. \t{ZERO} or \t{IZAUR+} would not remove all ambiguity.
 We can compute these tags for all cohorts/ambiguity classes, and see if some rules in the grammar could be simplified.
-
-
-\subsection{Views on grammar}
-
-There are many ways to order the rules in a grammar. For better maintainability, 
-it makes sense to place all rules that target certain phenomena together.
-On the other hand, some rules may be very heuristic, and don't make sense to be in the same section.
-
-We propose a solution of different \emph{views} on the grammar.
-\begin{itemize}
-\item Running order: can be optimised with ML-tuning, no need to be human-readable
-\item Sorted by feature: for the ease of the grammarian to find all rules that target the same phenomena.
-For example, ``all rules that target nouns'', ``all rules that mention postpositions in their contextual tests''.
-\item Tree view of rule dependencies. See next section about that.
 \end{itemize}
 
+TODO: some final remarks
 
+\section*{Acknowledgments}
 
-\subsubsection{Tree view of rule dependencies}
-
-Two rules may be connected in several ways:
-
-\begin{itemize}
-\item Contradiction: Rules X and Y, in any order, give explicitly different instructions. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Noun}.
-\item ``Feeding order'': Rule X earlier in the sequence enables a later rule Y. Example: X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 NOT Noun)}
-\item ``Bleeding order'': Rule X earlier in the sequence blocks a later rule Y. Example:  X = \t{REMOVE Noun} and Y = \t{SELECT Adj IF (-1 Noun)}.
-\item Counter(f/bl)eeding order: rules X and Y are reversed. Counterbleeding order is optimal, given that both rules are good: only in this order, both Y and X have a chance to apply. Counterfeeding is suboptimal but tolerable: X will act on the first iteration, and Y only on the second iteration, unless there is another rule that would block Y before.
-\item Rule X removes both correct and incorrect readings. Rule Y, if placed before X, renders X unable to act in some cases. Ideally, in the incorrect cases!
-\end{itemize}
-
-The rules could be arranged in the form of a tree, based on how they affect and are affected by other rules. Combined with the feature view, a grammarian could have a look at all rules that target nouns and their dependencies.
-
-
-
+This work has been supported by the project UPV/EHU taldea. UPV/EHU (GIU16/16)
 
 
 
