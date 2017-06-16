@@ -204,8 +204,8 @@ versions to the original.
 
 \subsection{Final order}
 
-After checking the conflicts and redundancies of the grammar the
-linguists will proceed to reorder the grammar by defining the sections
+After checking the conflicts and redundancies of the grammar, 
+we will proceed to reorder the grammar by defining the sections
 of the grammar corresponding to each level of granularity of the Basque tag set.
 
 
@@ -451,30 +451,37 @@ maintenance, and other for running.
 
 % The rules could be arranged in the form of a tree, based on how they affect and are affected by other rules. Combined with the feature view, a grammarian could have a look at all rules that target nouns and their dependencies.
 
-\section{Conclusions and future work}
+\section{Future work}
 
 After checking the soundness of the grammar by means of some simple
 tools, we are aware that in the near future we will need more complex
 utilities for helping the grammar writing.
 The following items are on our wish list:
 
-\begin{itemize}
-\item Flexible rule ordering, possibly implemented as different views
+
+\paragraph{Flexible rule ordering} We would like the option to view
+the grammar in a variety of orders, possibly implemented as a feature
   in the CG IDE. The base order would be one that is easily
   maintainable and linguistically motivated, and any other orders can
   be generated from the base order.
-\item Finding deeper connections between the rules. So far we have used the
+\paragraph{Deeper connections between the rules} So far we have used the
   SAT-based conflict check to run the grammar in order, but we would
   like to develop this further: take any given rule, and give a list
   of all the rules, anywhere in the grammar, that potentially feed to
   it or block it. The biggest problem in developing such a method is
-  the size of the tagset. 
-\item Tagset minimisation: it is possible that some of the level 4 or
-  3 tags used in the rules could be removed without it affecting the
-  functionality of the grammar. Using a development corpus, we could
-  find the minimal set of tags that discriminate between correct and
-  incorrect readings.
-Example:
+  the size of the tagset; this leads us to the next item on our wishlist. 
+\paragraph{Tagset minimisation} This feature may be specific to the
+Basque grammar; for a language with a smaller tagset, there is no
+reason to restrict the number of tags used in the rules. We propose
+this idea, because we think it would help to make the SAT-encoding
+of the Basque grammar more manageable.
+
+The grammar is written to optimize the recall and precision on level 2
+tags. It is possible that some of the level 4 or 3 tags used in the
+rules could be removed without it affecting the functionality of the
+grammar. Using a development corpus, we could find the minimal set of
+tags that discriminate between correct and incorrect readings. The
+following example illustrates the idea:
 
 \begin{verbatim}
 "<lurtarraren>"
@@ -484,12 +491,21 @@ Example:
   "lurtar" ADJ ARR IZAUR+ ABS MG
 \end{verbatim}
 
-For the given cohort, tags that are only in the correct are \t{GEN} and only in incorrect are \t{IZE, ABS, MG}.
+\noindent For the given cohort, tags that are only in the correct are \t{GEN} and only in incorrect are \t{IZE, ABS, MG}.
 In other words, we learn that a rule that would target e.g. \t{ZERO} or \t{IZAUR+} would not remove all ambiguity.
-We can compute these tags for all cohorts/ambiguity classes, and see if some rules in the grammar could be simplified.
-\end{itemize}
+We can compute these tags for all cohorts/ambiguity classes, and see
+if some tags don't contribute to the disambiguation as much as the
+others. In such a case, we could simplify the rules in the grammar.
 
-TODO: some final remarks
+
+\section{Conclusions}
+
+We have set out to improve the readability and performance of the
+Basque CG. The work is in progress, and the improvements on the
+performance are so far quite minor, but we feel this as a promising
+start, and a useful case study, for trying out the resources developed
+within the CG community.
+
 
 \section*{Acknowledgments}
 
